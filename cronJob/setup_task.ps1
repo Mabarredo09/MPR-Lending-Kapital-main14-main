@@ -1,7 +1,7 @@
 # Task configuration
 $taskName = "MPR Lending Payment Generator"
 $taskDescription = "Generates monthly payments for active loans"
-$execPath = "C:\xampp\htdocs\MPR-Lending-Kapital-main14-main\cronJob\run_cron.bat"
+$execPath = "C:\xampp\htdocs\MPR-Lending-Kapital-main14-main\cronJob\samplecron.bat"
 $workingDir = "C:\xampp\htdocs\MPR-Lending-Kapital-main14-main\cronJob"
 
 # Create task components

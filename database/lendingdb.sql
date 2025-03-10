@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 04, 2025 at 08:16 AM
+-- Generation Time: Mar 10, 2025 at 03:17 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -286,8 +286,7 @@ CREATE TABLE `loan` (
 --
 
 INSERT INTO `loan` (`id`, `reference_no`, `borrower_id`, `customer_type`, `loan_amount`, `interest_rate`, `loan_date`, `term_months`, `repayment_date`, `promissory_id`, `remarks`, `created_at`, `updated_at`) VALUES
-(12, 'LN-042400', 5, 'Regular', 880060.38, 7, '2025-02-26', 14, '2026-04-26', 12, 'qwe', '2025-02-26 10:39:12', '2025-03-04 15:06:32'),
-(22, 'LN-B701C9', 6, 'Regular', 348.14, 7, '2025-03-04', 12, '2026-03-04', 22, 'qwe', '2025-03-04 14:17:31', '2025-03-04 15:06:32');
+(30, 'LN-224578', 5, 'Regular', 3776.74, 7, '2025-03-06', 4, '2026-03-06', 30, 'qwe', '2025-03-06 10:30:58', '2025-03-06 11:41:11');
 
 -- --------------------------------------------------------
 
@@ -297,11 +296,20 @@ INSERT INTO `loan` (`id`, `reference_no`, `borrower_id`, `customer_type`, `loan_
 
 CREATE TABLE `loan_balance` (
   `id` int(11) NOT NULL,
+  `loan_reference_no` varchar(128) NOT NULL,
   `borrower_id` int(11) NOT NULL,
   `loan_balance` float(10,2) NOT NULL DEFAULT 0.00,
+  `month_term_duration` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `loan_balance`
+--
+
+INSERT INTO `loan_balance` (`id`, `loan_reference_no`, `borrower_id`, `loan_balance`, `month_term_duration`, `created_at`, `updated_at`) VALUES
+(3, 'LN-224578', 5, 6332.05, 12, '2025-03-06 02:30:58', '2025-03-06 03:43:56');
 
 -- --------------------------------------------------------
 
@@ -326,34 +334,19 @@ CREATE TABLE `loan_schedules` (
 --
 
 INSERT INTO `loan_schedules` (`id`, `loan_id`, `due_date`, `principal_amount`, `interest_amount`, `total_amount`, `status`, `created_at`, `updated_at`) VALUES
-(57, 12, '2025-03-04', 70523.95, 413.80, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(58, 12, '2025-04-04', 65390.27, 5547.49, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(59, 12, '2025-05-04', 65771.71, 5166.05, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(60, 12, '2025-06-04', 66155.38, 4782.38, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(61, 12, '2025-07-04', 66541.28, 4396.47, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(62, 12, '2025-08-04', 66929.44, 4008.31, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(63, 12, '2025-09-04', 67319.86, 3617.89, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(64, 12, '2025-10-04', 67712.56, 3225.19, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(65, 12, '2025-11-04', 68107.55, 2830.20, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(66, 12, '2025-12-04', 68504.85, 2432.91, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(67, 12, '2026-01-04', 68904.46, 2033.30, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(68, 12, '2026-02-04', 69306.40, 1631.35, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(69, 12, '2026-03-04', 69710.69, 1227.07, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(70, 12, '2026-04-04', 70117.33, 820.42, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(71, 12, '2026-05-04', 70526.35, 411.40, 70937.75, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(72, 22, '2025-03-04', 32.78, 0.19, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(73, 22, '2025-04-04', 30.75, 2.22, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(74, 22, '2025-05-04', 30.93, 2.04, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(75, 22, '2025-06-04', 31.11, 1.86, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(76, 22, '2025-07-04', 31.30, 1.68, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(77, 22, '2025-08-04', 31.48, 1.50, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(78, 22, '2025-09-04', 31.66, 1.32, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(79, 22, '2025-10-04', 31.85, 1.13, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(80, 22, '2025-11-04', 32.03, 0.95, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(81, 22, '2025-12-04', 32.22, 0.76, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(82, 22, '2026-01-04', 32.41, 0.57, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(83, 22, '2026-02-04', 32.60, 0.38, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32'),
-(84, 22, '2026-03-04', 32.79, 0.19, 32.98, 'pending', '2025-03-04 15:05:56', '2025-03-04 15:06:32');
+(153, 30, '2025-04-06', 986.23, 71.30, 1057.53, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:03:08'),
+(154, 30, '2025-05-06', 898.62, 59.37, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:27:36'),
+(155, 30, '2025-06-06', 903.86, 54.13, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:35:28'),
+(156, 30, '2025-07-06', 909.14, 48.86, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:36:54'),
+(157, 30, '2025-08-06', 914.44, 43.56, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:37:29'),
+(158, 30, '2025-09-06', 919.77, 38.22, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:37:30'),
+(159, 30, '2025-10-06', 925.14, 32.86, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:40:53'),
+(160, 30, '2025-11-06', 930.53, 27.46, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:41:11'),
+(161, 30, '2025-12-06', 930.53, 27.46, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:37:29'),
+(162, 30, '2026-01-06', 935.96, 22.03, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:27:36'),
+(163, 30, '2026-02-06', 941.42, 16.57, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:27:36'),
+(164, 30, '2026-03-06', 946.91, 11.08, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:27:36'),
+(165, 30, '2026-04-06', 952.44, 5.56, 957.99, 'pending', '2025-03-06 11:03:08', '2025-03-06 11:27:36');
 
 -- --------------------------------------------------------
 
@@ -379,6 +372,7 @@ CREATE TABLE `payment` (
   `reference_no` varchar(20) NOT NULL,
   `borrower_id` int(11) NOT NULL,
   `payment_amount` float(10,2) NOT NULL,
+  `paid_amount` float(10,2) NOT NULL,
   `payment_date` date NOT NULL,
   `remarks` text NOT NULL,
   `status` enum('pending','paid','overdue','') NOT NULL,
@@ -390,17 +384,15 @@ CREATE TABLE `payment` (
 -- Dumping data for table `payment`
 --
 
-INSERT INTO `payment` (`id`, `reference_no`, `borrower_id`, `payment_amount`, `payment_date`, `remarks`, `status`, `created_at`, `updated_at`) VALUES
-(57, 'PMT-104595', 5, 89511.54, '0000-00-00', 'Monthly payment generated by cron job', 'pending', '2025-03-04 14:42:25', '2025-03-04 14:42:25'),
-(58, 'PMT-104C47', 6, 43.26, '0000-00-00', 'Monthly payment generated by cron job', 'pending', '2025-03-04 14:42:25', '2025-03-04 14:42:25'),
-(59, 'PMT-3982FC', 5, 89511.54, '0000-00-00', 'Monthly payment generated by cron job', 'pending', '2025-03-04 14:55:15', '2025-03-04 14:55:15'),
-(60, 'PMT-39AFCA', 6, 43.26, '0000-00-00', 'Monthly payment generated by cron job', 'pending', '2025-03-04 14:55:15', '2025-03-04 14:55:15'),
-(61, 'PMT-D928D5', 5, 82834.61, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:01:01', '2025-03-04 15:01:01'),
-(62, 'PMT-D946B3', 6, 39.52, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:01:01', '2025-03-04 15:01:01'),
-(63, 'PMT-474383', 5, 76655.73, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:05:56', '2025-03-04 15:05:56'),
-(64, 'PMT-476768', 6, 36.10, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:05:56', '2025-03-04 15:05:56'),
-(65, 'PMT-86E74A', 5, 70937.75, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:06:32', '2025-03-04 15:06:32'),
-(66, 'PMT-87012F', 6, 32.98, '2025-03-04', 'Monthly payment generated by cron job', 'pending', '2025-03-04 15:06:32', '2025-03-04 15:06:32');
+INSERT INTO `payment` (`id`, `reference_no`, `borrower_id`, `payment_amount`, `paid_amount`, `payment_date`, `remarks`, `status`, `created_at`, `updated_at`) VALUES
+(86, 'PMT-C50A3C', 5, 1057.53, 1057.53, '2025-04-06', 'pending', 'paid', '2025-03-06 11:03:08', '2025-03-06 11:24:41'),
+(87, 'PMT-8179E3', 5, 957.99, 900.00, '2025-05-06', 'pending', 'paid', '2025-03-06 11:27:36', '2025-03-06 11:31:10'),
+(88, 'PMT-0CD782', 5, 957.99, 957.99, '2025-06-06', 'pending', 'paid', '2025-03-06 11:35:28', '2025-03-06 11:35:46'),
+(89, 'PMT-6D8C3E', 5, 957.99, 957.99, '2025-07-06', 'pending', 'paid', '2025-03-06 11:36:54', '2025-03-06 11:38:50'),
+(90, 'PMT-907203', 5, 957.99, 200.00, '2025-08-06', 'pending', 'paid', '2025-03-06 11:37:29', '2025-03-06 11:39:03'),
+(91, 'PMT-A6DD53', 5, 957.99, 957.99, '2025-09-06', 'pending', 'paid', '2025-03-06 11:37:30', '2025-03-06 11:41:29'),
+(92, 'PMT-5B38CA', 5, 957.99, 957.99, '2025-10-06', 'pending', 'paid', '2025-03-06 11:40:53', '2025-03-06 11:43:43'),
+(93, 'PMT-76809E', 5, 957.99, 957.99, '2025-11-06', 'pending', 'paid', '2025-03-06 11:41:11', '2025-03-06 11:43:56');
 
 -- --------------------------------------------------------
 
@@ -427,7 +419,13 @@ INSERT INTO `promissory_files` (`id`, `promissory_file_path`, `created_at`) VALU
 (13, '1740537635_67be7f233cc27.png', '2025-02-26 10:40:35'),
 (14, '1740537741_67be7f8dc4149.jpg', '2025-02-26 10:42:21'),
 (15, '1740537781_67be7fb5d7d1c.pdf', '2025-02-26 10:43:01'),
-(22, '1741069051_67c69afb6f9d8.jpg', '2025-03-04 14:17:31');
+(22, '1741069051_67c69afb6f9d8.jpg', '2025-03-04 14:17:31'),
+(23, '1741073391_67c6abef8f1a3.png', '2025-03-04 15:29:51'),
+(24, '1741074440_67c6b00894272.jpg', '2025-03-04 15:47:20'),
+(25, '1741225395_67c8fdb326544.png', '2025-03-06 09:43:15'),
+(26, '1741226399_67c9019faf3bd.jpg', '2025-03-06 09:59:59'),
+(27, '1741227355_67c9055b25cac.pdf', '2025-03-06 10:15:55'),
+(30, '1741228258_67c908e223bab.png', '2025-03-06 10:30:58');
 
 -- --------------------------------------------------------
 
@@ -456,7 +454,13 @@ INSERT INTO `transactions` (`id`, `reference_no`, `transaction_type`, `amount`, 
 (12, 'LN-DC494C', 'loan', 1300.00, 5, '2025-02-26 10:42:21', '2025-02-26 10:42:21'),
 (13, 'LN-5D866F', 'loan', 12000000.00, 5, '2025-02-26 10:43:01', '2025-02-26 10:43:01'),
 (15, 'GR-7235BD', 'grocery', 11111.00, 5, '2025-02-26 11:20:55', '2025-02-26 11:20:55'),
-(16, 'LN-B701C9', 'loan', 100000.00, 6, '2025-03-04 14:17:31', '2025-03-04 14:17:31');
+(16, 'LN-B701C9', 'loan', 100000.00, 6, '2025-03-04 14:17:31', '2025-03-04 14:17:31'),
+(17, 'LN-F8FA59', 'loan', 120000.00, 5, '2025-03-04 15:29:51', '2025-03-04 15:29:51'),
+(18, 'LN-89516F', 'loan', 10000.00, 5, '2025-03-04 15:47:20', '2025-03-04 15:47:20'),
+(19, 'LN-326D36', 'loan', 20000.00, 6, '2025-03-06 09:43:15', '2025-03-06 09:43:15'),
+(20, 'LN-FB0308', 'loan', 120000.00, 6, '2025-03-06 09:59:59', '2025-03-06 09:59:59'),
+(21, 'LN-B263BD', 'loan', 12000.00, 5, '2025-03-06 10:15:55', '2025-03-06 10:15:55'),
+(22, 'LN-224578', 'loan', 12222.00, 5, '2025-03-06 10:30:58', '2025-03-06 10:30:58');
 
 -- --------------------------------------------------------
 
@@ -546,6 +550,7 @@ ALTER TABLE `insurance_details`
 --
 ALTER TABLE `loan`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `reference_no` (`reference_no`),
   ADD KEY `borrower_id` (`borrower_id`),
   ADD KEY `promissory_id` (`promissory_id`);
 
@@ -554,7 +559,8 @@ ALTER TABLE `loan`
 --
 ALTER TABLE `loan_balance`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `borrower_id` (`borrower_id`);
+  ADD KEY `borrower_id` (`borrower_id`),
+  ADD KEY `loan_reference_no` (`loan_reference_no`);
 
 --
 -- Indexes for table `loan_schedules`
@@ -652,19 +658,19 @@ ALTER TABLE `insurance_details`
 -- AUTO_INCREMENT for table `loan`
 --
 ALTER TABLE `loan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `loan_balance`
 --
 ALTER TABLE `loan_balance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `loan_schedules`
 --
 ALTER TABLE `loan_schedules`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
 
 --
 -- AUTO_INCREMENT for table `notification`
@@ -676,19 +682,19 @@ ALTER TABLE `notification`
 -- AUTO_INCREMENT for table `payment`
 --
 ALTER TABLE `payment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94;
 
 --
 -- AUTO_INCREMENT for table `promissory_files`
 --
 ALTER TABLE `promissory_files`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -754,7 +760,8 @@ ALTER TABLE `loan`
 -- Constraints for table `loan_balance`
 --
 ALTER TABLE `loan_balance`
-  ADD CONSTRAINT `loan_balance_ibfk_1` FOREIGN KEY (`borrower_id`) REFERENCES `borrowers` (`id`);
+  ADD CONSTRAINT `loan_balance_ibfk_1` FOREIGN KEY (`borrower_id`) REFERENCES `borrowers` (`id`),
+  ADD CONSTRAINT `loan_balance_ibfk_2` FOREIGN KEY (`loan_reference_no`) REFERENCES `loan` (`reference_no`);
 
 --
 -- Constraints for table `loan_schedules`
