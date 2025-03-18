@@ -1,4 +1,5 @@
 <?php
+
 require_once 'db_connect.php';
 
 $type = $_GET['type'] ?? 'all';
@@ -14,10 +15,22 @@ $response = ['status' => 'success', 'data' => []];
 try {
     switch ($type) {
         case 'loan':
-            $sql = "SELECT * FROM loan WHERE borrower_id = ? ORDER BY loan_date DESC";
+            $sql = "SELECT
+            l.reference_no,
+            l.repayment_date,
+            l.customer_type,
+            l.loan_amount,
+            l.interest_rate,
+            l.term_months,
+            l.remarks,
+            l.loan_date,
+            pf.promissory_file_path,
+            lb.loan_balance
+            FROM loan l LEFT JOIN loan_balance lb ON l.reference_no = lb.loan_reference_no
+            LEFT JOIN promissory_files pf ON l.promissory_id = pf.id WHERE l.borrower_id = ? ORDER BY loan_date DESC";
             break;
         case 'payment':
-            $sql = "SELECT * FROM payment WHERE borrower_id = ? ORDER BY payment_date DESC";
+            $sql = "SELECT * FROM payment WHERE borrower_id = ? ORDER BY created_at DESC";
             break;
         case 'grocery':
             $sql = "SELECT * FROM grocery WHERE borrower_id = ? ORDER BY grocery_date DESC";

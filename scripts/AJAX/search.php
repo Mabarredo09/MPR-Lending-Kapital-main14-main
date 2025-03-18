@@ -15,12 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Search query with JOINs to get all related data
-        $sql = "SELECT 
+        $sql = "SELECT
             b.*,
             a.home_no, a.street, a.barangay, a.city, a.province, a.region,
-            ed.employer_name, ed.years_with_employer, ed.position, 
+            ed.employer_name, ed.years_with_employer, ed.position,
             ed.phone_no as employer_phone, ed.salary,
-            ea.home_no as employer_home_no, ea.street as employer_street, 
+            ea.home_no as employer_home_no, ea.street as employer_street,
             ea.barangay as employer_barangay, ea.city as employer_city,
             ea.province as employer_province, ea.region as employer_region,
             id.id_type, id.id_no, id.expiry_date, id.id_photo_path,
@@ -36,9 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         LEFT JOIN insurance_details ins ON b.id = ins.borrower_id
         LEFT JOIN dependents d ON b.id = d.borrower_id
         LEFT JOIN collateral_files cf ON b.id = cf.borrower_id
-        WHERE 
-            b.id LIKE ? OR 
-            b.first_name LIKE ? OR 
+        WHERE
+            b.id LIKE ? OR
+            b.first_name LIKE ? OR
             b.middle_name LIKE ? OR
             b.surname LIKE ?
         GROUP BY b.id";

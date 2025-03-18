@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 
@@ -14,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->begin_transaction();
 
         // Get borrower's current address_id and employer's address_id
-        $addressSql = "SELECT b.address_id, ed.address_id as employer_address_id 
+        $addressSql = "SELECT b.address_id, ed.address_id as employer_address_id
                       FROM borrowers b
                       LEFT JOIN employment_details ed ON b.id = ed.borrower_id
                       WHERE b.id = ?";
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $addresses = $addressResult->fetch_assoc();
 
         // Update borrower's address
-        $addressSql = "UPDATE addresses SET 
+        $addressSql = "UPDATE addresses SET
             home_no = ?, street = ?, barangay = ?, city = ?, province = ?, region = ?
             WHERE id = ?";
         $addressStmt = $db->prepare($addressSql);
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $addressStmt->execute();
 
         // Update employer's address
-        $empAddressSql = "UPDATE addresses SET 
+        $empAddressSql = "UPDATE addresses SET
             home_no = ?, street = ?, barangay = ?, city = ?, province = ?, region = ?
             WHERE id = ?";
         $empAddressStmt = $db->prepare($empAddressSql);
@@ -59,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $empAddressStmt->execute();
 
         // Update borrower's basic information
-        $borrowerSql = "UPDATE borrowers SET 
-            first_name = ?, middle_name = ?, surname = ?, suffix = ?, 
+        $borrowerSql = "UPDATE borrowers SET
+            first_name = ?, middle_name = ?, surname = ?, suffix = ?,
             sex = ?, dob = ?, marital_status = ?, contact_number = ?
             WHERE id = ?";
         $borrowerStmt = $db->prepare($borrowerSql);
@@ -79,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $borrowerStmt->execute();
 
         // Update employment details
-        $employmentSql = "UPDATE employment_details SET 
-            employer_name = ?, years_with_employer = ?, position = ?, 
+        $employmentSql = "UPDATE employment_details SET
+            employer_name = ?, years_with_employer = ?, position = ?,
             phone_no = ?, salary = ?
             WHERE borrower_id = ?";
 
@@ -104,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $idPhoto = uploadFile($_FILES['idPhoto'], 'id_photos');
             }
 
-            $idSql = "UPDATE identification_documents SET 
+            $idSql = "UPDATE identification_documents SET
                 id_type = ?, id_no = ?, expiry_date = ?, id_photo_path = ?
                 WHERE borrower_id = ?";
             $idStmt = $db->prepare($idSql);
@@ -126,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insuranceFile = uploadFile($_FILES['insurancePhoto'], 'insurance_files');
             }
 
-            $insuranceSql = "UPDATE insurance_details SET 
+            $insuranceSql = "UPDATE insurance_details SET
                 insurance_provider = ?, issued_date = ?, expiry_date = ?, insurance_file_path = ?
                 WHERE borrower_id = ?";
             $insuranceStmt = $db->prepare($insuranceSql);
@@ -142,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Update dependent information
-        $dependentSql = "UPDATE dependents SET 
+        $dependentSql = "UPDATE dependents SET
             name = ?, contact_number_dependents = ?
             WHERE borrower_id = ?";
         $dependentStmt = $db->prepare($dependentSql);
@@ -218,4 +219,3 @@ function uploadFile($file, $directory)
 
     throw new Exception("Failed to upload file");
 }
-?>

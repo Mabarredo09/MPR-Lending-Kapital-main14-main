@@ -80,41 +80,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             throw new Exception("Failed to save loan record: " . $stmt->error);
         }
 
-        // Replace the loan balance check section with this:
-        $checkBalanceStmt = $conn->prepare("
-SELECT id, loan_balance
-FROM loan_balance
-WHERE loan_reference_no = ?
-OR (borrower_id = ? AND status = 1)
-");
-        $checkBalanceStmt->bind_param("si", $referenceNo, $borrowerId);
+        // Check if loan_balance record exists for this borrower
+        $checkBalanceStmt = $conn->prepare("SELECT id, loan_balance FROM loan_balance WHERE borrower_id = ? AND status = 1");
+        $checkBalanceStmt->bind_param("i", $borrowerId);
         $checkBalanceStmt->execute();
         $balanceResult = $checkBalanceStmt->get_result();
 
-        // Always insert new loan balance record
-        $insertBalanceStmt = $conn->prepare("
-INSERT INTO loan_balance (
-    loan_reference_no,
-    borrower_id,
-    loan_balance,
-    month_term_duration,
-    status
-) VALUES (?, ?, ?, ?, 1)
-");
-        $insertBalanceStmt->bind_param(
-            "sidi",
-            $referenceNo,
-            $borrowerId,
-            $loanAmount,
-            $term
-        );
+        if ($balanceResult->num_rows > 0) {
+            // Update existing loan balance
+            $currentBalance = $balanceResult->fetch_assoc()['loan_balance'];
+            $newBalance = $currentBalance + $loanAmount;
 
-        if (!$insertBalanceStmt->execute()) {
-            throw new Exception("Failed to save loan balance: " . $insertBalanceStmt->error);
+            $updateBalanceStmt = $conn->prepare("UPDATE loan_balance SET loan_balance = ? WHERE borrower_id = ?");
+            $updateBalanceStmt->bind_param("di", $newBalance, $borrowerId);
+
+            if (!$updateBalanceStmt->execute()) {
+                throw new Exception("Failed to update loan balance: " . $updateBalanceStmt->error);
+            }
+            $updateBalanceStmt->close();
+        } else {
+            // Insert new loan balance record
+            $insertBalanceStmt = $conn->prepare("INSERT INTO loan_balance (loan_reference_no, borrower_id, loan_balance,month_term_duration,status) VALUES (?, ?, ?, ?, 1)");
+            $insertBalanceStmt->bind_param("sidi", $referenceNo, $borrowerId, $loanAmount, $term);
+
+            if (!$insertBalanceStmt->execute()) {
+                throw new Exception("Failed to save loan balance: " . $insertBalanceStmt->error);
+            }
+            $insertBalanceStmt->close();
         }
-        $insertBalanceStmt->close();
 
+        $checkBalanceStmt->close();
 
+        // if (!$insertid) {
+        //     throw new Exception("Failed to get loan ID");
+        // }
+        // Also insert into transactions table
         $stmtTrans = $conn->prepare("INSERT INTO transactions (reference_no, transaction_type,  amount, borrower_id) VALUES (?, 'loan', ?, ?)");
         $stmtTrans->bind_param("ssi", $referenceNo, $loanAmount, $borrowerId);
 

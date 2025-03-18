@@ -1149,239 +1149,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `<input type="hidden" name="reference_no" value="${generateReferenceNo()}">`
       );
   });
-
-  // loanForm.addEventListener("submit", function (event) {
-  //   event.preventDefault();
-
-  //   const rawValue = loanAmount.value.replace(/,/g, "");
-  //   const hiddenInput = document.createElement("input");
-
-  //   hiddenInput.type = "hidden";
-  //   hiddenInput.name = "loanAmount";
-  //   hiddenInput.value = rawValue;
-
-  //   loanAmount.name = "loanAmount_formatted";
-
-  //   // Add the hidden input to the form
-  //   this.appendChild(hiddenInput);
-
-  //   // Validate loan date
-  //   const loanDate = document.getElementById("loanDate").value;
-  //   if (!loanDate) {
-  //     Swal.fire({
-  //       icon: "error",
-  //       title: "Invalid Date",
-  //       text: "Please select a valid loan date",
-  //     });
-  //     return;
-  //   }
-
-  //   // Format the date
-  //   const formattedDate = new Date(loanDate).toISOString().split("T")[0];
-
-  //   const formData = new FormData(loanForm);
-  //   formData.set("loanDate", formattedDate); // Update the date in FormData
-
-  //   console.log("Sending loan date:", formData.get("loanDate")); // Debug log
-
-  //   // Rest of your form submission code...
-  //   Swal.fire({
-  //     icon: "warning",
-  //     title: "Are you sure you want to add this loan?",
-  //     // ... existing code ...
-  //   }).then((result) => {
-  //     if (result.isConfirmed) {
-  //       fetch("scripts/AJAX/add_loan.php", {
-  //         method: "POST",
-  //         body: formData,
-  //       })
-  //         .then((response) => response.json())
-  //         .then((data) => {
-  //           console.log("Server response:", data); // Debug log
-  //           // ... rest of your success handling ...
-  //         })
-  //         .catch((error) => {
-  //           console.error("Error:", error);
-  //           // ... error handling ...
-  //         });
-  //     }
-  //   });
 });
-
-// Add this function to load loans
-// function loadLoans(borrowerId) {
-//   if (!borrowerId) return;
-
-//   lazyLoadTable(borrowerId);
-
-//   fetch(
-//     `scripts/AJAX/get_loans.php?borrowerId=${borrowerId}&include_grocery=true`
-//   )
-//     .then((response) => response.json())
-//     .then((data) => {
-//       if (data.status === "success") {
-//         const tableBody = document.querySelector("#loansTable tbody");
-//         tableBody.innerHTML = "";
-
-//         data.data.forEach((item) => {
-//           const row = document.createElement("tr");
-//           if (item.type === "grocery") {
-//             row.innerHTML = `
-//                       <td>${formatDate(item.loan_date)}</td>
-//                       <td>${item.reference_no}</td>
-//                       <td>${item.customer_type}</td>
-//                       <td>${formatDate(item.repayment_date)}</td>
-//                       <td>${formatCurrency(item.loan_amount)}</td>
-//                       <td>${item.interest_rate}%</td>
-//                       <td>${item.term_months} months</td>
-//                       <td><button class="view-button"
-//                               onclick="viewPromissoryNote('${
-//                                 item.promissory_file_path
-//                               }')"
-//                               ${item.promissory_file_path ? "" : "disabled"}>
-//                           View
-//                       </button></td>
-//                       <td>${item.remarks || "No remarks"}</td>
-//                       <td>${formatCurrency(item.balance)}</td>
-//                       <td><button onclick="handlePayment('${
-//                         item.reference_no
-//                       }')">Pay</button></td>
-//                   `;
-//           } else {
-//             // Existing loan row format
-//             row.innerHTML = `
-//                             <td>${formatDate(item.loan_date)}</td>
-//                             <td>${item.reference_no}</td>
-//                             <td>${item.customer_type}</td>
-//                             <td>${formatDate(item.repayment_date)}</td>
-//                             <td>${formatCurrency(item.loan_amount)}</td>
-//                             <td>${item.interest_rate}%</td>
-//                             <td>${item.term_months} months</td>
-//                             <td><button class="view-button"
-//                                     onclick="viewPromissoryNote('${
-//                                       item.promissory_file_path
-//                                     }')"
-//                                     ${
-//                                       item.promissory_file_path
-//                                         ? ""
-//                                         : "disabled"
-//                                     }>
-//                                 View
-//                             </button></td>
-//                             <td>${item.remarks}</td>
-//                             <td>${formatCurrency(item.balance)}</td>
-//                             <td><button onclick="handlePayment('${
-//                               item.reference_no
-//                             }')">Pay</button></td>
-//                         `;
-//           }
-//           tableBody.appendChild(row);
-//         });
-//       }
-//     })
-//     .catch((error) => console.error("Error:", error));
-// }
-
-// Helper function to handle lazy loading of table data
-// function lazyLoadTable(borrowerId) {
-//   if (!borrowerId) return;
-
-//   const tableBody = document.querySelector("#loansTable tbody");
-//   // const loadingRow = document.createElement("tr");
-//   // loadingRow.innerHTML = `
-//   //     <td colspan="11" class="text-center">
-//   //         <div class="loading-spinner">Loading...</div>
-//   //     </td>
-//   // `;
-//   // tableBody.appendChild(loadingRow);
-
-//   // Add debouncing to prevent multiple rapid requests
-//   clearTimeout(window.lazyLoadTimeout);
-//   window.lazyLoadTimeout = setTimeout(() => {
-//     fetch(
-//       `scripts/AJAX/get_loans.php?borrowerId=${borrowerId}&include_grocery=true`
-//     )
-//       .then((response) => response.json())
-//       .then((data) => {
-//         if (data.status === "success") {
-//           // Clear existing table content
-//           tableBody.innerHTML = "";
-
-//           // Populate with new data
-//           data.data.forEach((item) => {
-//             const row = document.createElement("tr");
-//             if (item.type === "grocery") {
-//               row.innerHTML = `
-//                               <td>${formatDate(item.grocery_date)}</td>
-//                               <td>${item.reference_no}</td>
-//                               <td>Grocery</td>
-//                               <td>N/A</td>
-//                               <td>${formatCurrency(item.grocery_amount)}</td>
-//                               <td>N/A</td>
-//                               <td>N/A</td>
-//                               <td>N/A</td>
-//                               <td>${item.remarks}</td>
-//                               <td>${formatCurrency(item.grocery_amount)}</td>
-//                               <td>
-//                                   <button class="pay-button" onclick="handlePayment('${
-//                                     item.reference_no
-//                                   }')">
-//                                       Pay
-//                                   </button>
-//                               </td>
-//                           `;
-//             } else {
-//               row.innerHTML = `
-//                               <td>${item.created_at}</td>
-//                               <td>${item.reference_no}</td>
-//                               <td>${item.customer_type}</td>
-//                               <td>${formatDate(item.repayment_date)}</td>
-//                               <td>${formatCurrency(item.loan_amount)}</td>
-//                               <td>${item.interest_rate}%</td>
-//                               <td>${item.term_months} months</td>
-//                               <td>
-//                                   <button class="view-button" onclick="viewPromissoryNote('${
-//                                     item.promissory_file_path
-//                                   }')"
-//                                   ${
-//                                     item.promissory_file_path ? "" : "disabled"
-//                                   }>
-//                                       View
-//                                   </button>
-//                               </td>
-//                               <td>${item.remarks}</td>
-//                               <td>${formatCurrency(item.balance)}</td>
-//                               <td>
-//                                   <button class="pay-button" onclick="handlePayment('${
-//                                     item.reference_no
-//                                   }')">
-//                                       Pay
-//                                   </button>
-//                               </td>
-//                           `;
-//             }
-//             // Add fade-in animation
-//             row.style.opacity = "0";
-//             tableBody.appendChild(row);
-//             setTimeout(() => {
-//               row.style.transition = "opacity 0.3s ease-in";
-//               row.style.opacity = "1";
-//             }, 10);
-//           });
-//         }
-//       })
-//       .catch((error) => {
-//         console.error("Error:", error);
-//         tableBody.innerHTML = `
-//                   <tr>
-//                       <td colspan="11" class="text-center text-danger">
-//                           Error loading data. Please try again.
-//                       </td>
-//                   </tr>
-//               `;
-//       });
-//   }, 300); // 300ms debounce delay
-// }
 
 // Helper function to format dates
 function formatDate(dateString) {
@@ -1483,10 +1251,104 @@ function viewPromissoryNote(filePath) {
   console.log("File extension:", fileExtension);
 }
 
-// Function to handle payment
+// Function to handle payment// Function to handle payment
 function handlePayment(referenceNo) {
-  // Implement payment logic here
-  console.log("Payment for loan:", referenceNo);
+  // Get the payment details first
+  fetch(`scripts/AJAX/get_payment_details.php?reference_no=${referenceNo}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        const fullAmount = data.amount;
+
+        // Show payment options dialog
+        Swal.fire({
+          title: "Payment Options",
+          html: `
+            <div class="payment-options">
+              <button class="full-pay-btn" onclick="handleFullPayment('${referenceNo}', ${fullAmount})">
+                Full Payment (${formatCurrency(fullAmount)})
+              </button>
+              <div class="custom-pay">
+                <input type="number" id="customAmount" 
+                  class="swal2-input" placeholder="Enter custom amount"
+                  min="1" max="${fullAmount}" step="0.01">
+                <button onclick="handleCustomPayment('${referenceNo}')">
+                  Pay Custom Amount
+                </button>
+              </div>
+            </div>
+          `,
+          showConfirmButton: false,
+          showCloseButton: true,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Could not fetch payment details",
+        });
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while processing your request",
+      });
+    });
+}
+function handleFullPayment(referenceNo, amount) {
+  submitPayment(referenceNo, amount);
+}
+
+function handleCustomPayment(referenceNo) {
+  const customAmount = document.getElementById("customAmount").value;
+  if (!customAmount || customAmount <= 0) {
+    Swal.fire({
+      icon: "error",
+      title: "Invalid Amount",
+      text: "Please enter a valid payment amount",
+    });
+    return;
+  }
+  submitPayment(referenceNo, customAmount);
+}
+
+function submitPayment(referenceNo, amount) {
+  fetch("scripts/AJAX/process_payment.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      reference_no: referenceNo,
+      amount: amount,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        Swal.fire({
+          icon: "success",
+          title: "Payment Successful",
+          text: `Payment of ${formatCurrency(amount)} has been processed`,
+          timer: 2000,
+        }).then(() => {
+          // Refresh the transactions table
+          loadTransactions("all");
+        });
+      } else {
+        throw new Error(data.message || "Payment failed");
+      }
+    })
+    .catch((error) => {
+      Swal.fire({
+        icon: "error",
+        title: "Payment Failed",
+        text: error.message || "An error occurred while processing the payment",
+      });
+    });
 }
 
 // Update loadLoans when a new loan is added
@@ -1515,39 +1377,134 @@ function showTable(tableId) {
 
 // Update event listeners for table buttons
 document.getElementById("tblAllBtn").addEventListener("click", () => {
+  clearTransactionInterval();
   showTable("allTable");
   loadTransactions("all");
 });
 
 document.getElementById("tblLoanBtn").addEventListener("click", () => {
+  clearTransactionInterval();
   showTable("loanTable");
   loadTransactions("loan");
 });
 
 document.getElementById("tblPaymentBtn").addEventListener("click", () => {
+  clearTransactionInterval();
   showTable("paymentTable");
   loadTransactions("payment");
 });
 
+document
+  .getElementById("tblPendingPaymentBtn")
+  .addEventListener("click", () => {
+    clearTransactionInterval();
+    showTable("pendingPaymentTable");
+    loadTransactions("payment");
+  });
 document.getElementById("tblGroceryBtn").addEventListener("click", () => {
+  clearTransactionInterval();
   showTable("groceryTable");
   loadTransactions("grocery");
 });
 
+let transactionRefreshInterval;
 // Function to load transactions based on type
 function loadTransactions(type) {
-  if (!originalValues || !originalValues.id) return;
+  // Use optional chaining for originalValues
+  if (!originalValues?.id) {
+    console.warn("No borrower selected");
+    return;
+  }
+  // Clear any existing interval
+  if (transactionRefreshInterval) {
+    clearInterval(transactionRefreshInterval);
+  }
+  // Initial load
+  fetchTransactions(type);
+  // Set up interval for subsequent loads
+  transactionRefreshInterval = setInterval(() => {
+    fetchTransactions(type);
+  }, 1000); // 1 second interval
 
   fetch(
     `scripts/AJAX/get_transactions.php?type=${type}&borrowerId=${originalValues.id}`
   )
     .then((response) => response.json())
     .then((data) => {
-      if (data.status === "success") {
-        updateTableContent(type, data.data);
+      // Use optional chaining for data.status check
+      if (data?.status === "success") {
+        updateTableContent(type, data?.data || []);
+      } else {
+        console.warn("Invalid response format:", data);
       }
     })
-    .catch((error) => console.error("Error loading transactions:", error));
+    .catch((error) => {
+      console.error("Error loading transactions:", error);
+      // Add error state handling for the UI
+      const tableId = getTableId(type);
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      if (tbody) {
+        tbody.innerHTML = `
+        <tr>
+          <td colspan="11" class="text-center">
+            Error loading transactions. Please try again.
+          </td>
+        </tr>
+      `;
+      }
+    });
+}
+
+// Helper function to fetch transactions
+function fetchTransactions(type) {
+  // Use optional chaining for originalValues
+  if (!originalValues?.id) {
+    console.warn("No borrower selected");
+    return;
+  }
+
+  fetch(
+    `scripts/AJAX/get_transactions.php?type=${type}&borrowerId=${originalValues.id}`
+  )
+    .then((response) => response.json())
+    .then((data) => {
+      if (data?.status === "success") {
+        updateTableContent(type, data?.data || []);
+      } else {
+        console.warn("Invalid response format:", data);
+      }
+    })
+    .catch((error) => {
+      console.error("Error loading transactions:", error);
+      const tableId = getTableId(type);
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="text-center text-danger">
+              Error loading transactions. Please try again.
+            </td>
+          </tr>
+        `;
+      }
+    });
+}
+
+// Add cleanup function to clear interval when switching views
+function clearTransactionInterval() {
+  if (transactionRefreshInterval) {
+    clearInterval(transactionRefreshInterval);
+    transactionRefreshInterval = null;
+  }
+}
+function getTableId(type) {
+  return type === "all"
+    ? "allTable"
+    : type === "loan"
+    ? "loanTable"
+    : type === "payment"
+    ? "paymentTable"
+    : "groceryTable";
 }
 
 // Function to update table content based on type
@@ -1589,7 +1546,7 @@ function generateRowContent(type, item) {
         item.promissory_file_path ? "" : "disabled"
       }>View</button></td>
               <td>${item.remarks}</td>
-              <td>${formatCurrency(item.balance)}</td>
+              <td>${formatCurrency(item.loan_balance)}</td>
               <td><button onclick="handlePayment('${
                 item.reference_no
               }')">Edit</button></td>
@@ -1598,13 +1555,17 @@ function generateRowContent(type, item) {
       return `
               <td>${formatDate(item.payment_date)}</td>
               <td>${item.reference_no}</td>
+              <td>${formatCurrency(item.principal_amount)}</td>
+              <td>${formatCurrency(item.interest_amount)}</td>
               <td>${formatCurrency(item.payment_amount)}</td>
               <td>${formatCurrency(item.paid_amount)}</td>
               <td>${item.remarks}</td>
               <td>${item.status}</td>
-              <td><button onclick="paymentclick('${
-                item.reference_no
-              }')">Pay</button></td>
+              <td>${
+                item.status === "paid"
+                  ? '<span class="badge-paid">Paid</span>'
+                  : `<button onclick="paymentclick('${item.reference_no}')">Pay</button>`
+              }</td>
           `;
     case "grocery":
       return `

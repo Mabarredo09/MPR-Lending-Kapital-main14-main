@@ -1,4 +1,5 @@
 <?php
+
 require 'db_connect.php';
 
 header('Content-Type: application/json');
@@ -74,10 +75,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Close statements
-    if (isset($stmt))
+    if (isset($stmt)) {
         $stmt->close();
-    if (isset($stmtTrans))
+    }
+    if (isset($stmtTrans)) {
         $stmtTrans->close();
+    }
     $conn->close();
 }
 ?>

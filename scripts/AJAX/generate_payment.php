@@ -1,5 +1,4 @@
 <?php
-// filepath: /c:/xampp/htdocs/MPR-Lending-Kapital-main14-main/scripts/AJAX/generate_payment.php
 require_once 'db_connect.php';
 
 // Function to calculate monthly payment (fixed payment formula)
@@ -9,178 +8,250 @@ function calculateMonthlyPayment($loanAmount, $interestRate, $termMonths)
     return $loanAmount * ($monthlyInterestRate / (1 - pow(1 + $monthlyInterestRate, -$termMonths)));
 }
 
+function calculateCustomPayment($currentBalance, $customAmount, $interestRate, $remainingMonths)
+{
+    $monthlyInterestRate = $interestRate / 100 / 12;
+
+    // Calculate regular monthly payment for reference
+    $regularMonthlyPayment = calculateMonthlyPayment($currentBalance, $interestRate, $remainingMonths);
+    $minInterestAmount = $currentBalance * $monthlyInterestRate;
+
+    // Validate payment amount
+    if ($customAmount < $minInterestAmount) {
+        throw new Exception("Payment must cover at least the interest amount: " . number_format($minInterestAmount, 2));
+    }
+
+    // Calculate maximum allowed payment
+    $maxPayment = $currentBalance + $minInterestAmount;
+    if ($customAmount > $maxPayment) {
+        throw new Exception("Payment cannot exceed balance plus interest: " . number_format($maxPayment, 2));
+    }
+
+    // Split payment into interest and principal
+    $interestAmount = $minInterestAmount;
+    $principalAmount = min($customAmount - $interestAmount, $currentBalance);
+    $newBalance = $currentBalance - $principalAmount;
+
+    // Calculate term reduction
+    $termReduction = 0;
+    if ($newBalance <= 0) {
+        // Full payoff
+        $termReduction = $remainingMonths;
+    } else if ($principalAmount > ($regularMonthlyPayment - $minInterestAmount)) {
+        // Extra principal payment
+        $regularPrincipalPortion = $regularMonthlyPayment - $minInterestAmount;
+        $extraPrincipal = $principalAmount - $regularPrincipalPortion;
+        $termReduction = 1 + floor($extraPrincipal / $regularPrincipalPortion);
+    } else {
+        // Regular or partial payment
+        $termReduction = 1;
+    }
+
+    return [
+        'principal_amount' => $principalAmount,
+        'interest_amount' => $interestAmount,
+        'total_amount' => $customAmount,
+        'term_reduction' => $termReduction,
+        'remaining_balance' => $newBalance,
+        'min_required' => $minInterestAmount,
+        'regular_payment' => $regularMonthlyPayment
+    ];
+}
+
 try {
     $conn->begin_transaction();
 
-    // Select active loans
-    $stmt = $conn->prepare("SELECT id, loan_amount, borrower_id, interest_rate, term_months, loan_date FROM loan WHERE loan_amount > 0");
+    // Update the loan query to properly handle multiple loans
+    $stmt = $conn->prepare("
+        SELECT l.id, l.loan_amount, l.borrower_id, l.interest_rate, l.term_months,
+               l.loan_date, l.reference_no, lb.loan_balance, lb.id as balance_id,
+               lb.month_term_duration, lb.status
+        FROM loan l
+        JOIN loan_balance lb ON l.reference_no = lb.loan_reference_no
+        LEFT JOIN loan_schedules ls ON l.id = ls.loan_id AND ls.status = 'pending'
+        WHERE lb.status = '1'
+        AND lb.loan_balance > 0
+        AND lb.month_term_duration > 0
+        AND ls.id IS NULL
+        GROUP BY l.id
+        ORDER BY l.loan_date DESC
+    ");
+
     $stmt->execute();
     $result = $stmt->get_result();
 
-    while ($loan = $result->fetch_assoc()) {
+    if ($loan = $result->fetch_assoc()) {
+        // Validate loan status before generating payment
+        $checkActiveLoans = $conn->prepare("
+            SELECT COUNT(*) as active_loans
+            FROM loan_balance
+            WHERE borrower_id = ?
+            AND status = '1'
+            AND loan_reference_no != ?
+        ");
+
+        $checkActiveLoans->bind_param("is", $loan['borrower_id'], $loan['reference_no']);
+        $checkActiveLoans->execute();
+        $activeLoansResult = $checkActiveLoans->get_result()->fetch_assoc();
+
         $loanId = $loan['id'];
         $loanAmount = $loan['loan_amount'];
-        $interestRate = $loan['interest_rate'];
-        $termMonths = $loan['term_months'];
         $borrowerId = $loan['borrower_id'];
+        $interestRate = $loan['interest_rate'];
+        $currentTermMonths = $loan['month_term_duration'];
+        $termMonths = $loan['term_months'];
         $loanDate = $loan['loan_date'];
+        $currentBalance = $loan['loan_balance'];
+        $balanceId = $loan['balance_id'];
 
-        // Get the latest payment date for this loan
-        $stmtLastPayment = $conn->prepare("SELECT payment_date FROM payment WHERE borrower_id = ? ORDER BY payment_date DESC LIMIT 1");
-        $stmtLastPayment->bind_param("i", $borrowerId);
-        $stmtLastPayment->execute();
-        $lastPaymentResult = $stmtLastPayment->get_result();
-
-        if ($lastPaymentResult->num_rows > 0) {
-            // If there's a previous payment, calculate next date from the last payment date
-            $lastPayment = $lastPaymentResult->fetch_assoc();
-            $nextPaymentDate = date('Y-m-d', strtotime('+1 month', strtotime($lastPayment['payment_date'])));
-        } else {
-            // If no previous payment, calculate from loan date
-            $nextPaymentDate = date('Y-m-d', strtotime('+1 month', strtotime($loanDate)));
+        // Add validation before generating new payment
+        if ($currentBalance <= 0) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'No active loan balance found'
+            ]);
+            exit;
         }
-        $stmtLastPayment->close();
 
-        // Check if a payment is already generated and pending for the next payment date
-        $stmtCheckPayment = $conn->prepare("SELECT id, payment_date FROM payment WHERE borrower_id = ? AND payment_date = ? AND status = 'pending'");
-        $stmtCheckPayment->bind_param("is", $borrowerId, $nextPaymentDate);
-        $stmtCheckPayment->execute();
-        $resultCheckPayment = $stmtCheckPayment->get_result();
-
-        if ($resultCheckPayment->num_rows > 0) {
-            // Payment is already pending, skip to the next loan
-            continue;
-        } else {
-            // Check if the payment is overdue
-            if (strtotime($nextPaymentDate) < strtotime(date("Y-m-d"))) {
-                // Payment is overdue, set the interest rate to 10%
-                $interestRate = 10;
-
-                $stmtUpdateInterestRate = $conn->prepare("UPDATE loan SET interest_rate = ? WHERE id = ?");
-                $stmtUpdateInterestRate->bind_param("ii", $interestRate, $loanId);
-                $stmtUpdateInterestRate->execute();
-                $stmtUpdateInterestRate->close();
-            }
-
-            // Calculate monthly payment
-            $monthlyPayment = calculateMonthlyPayment($loanAmount, $interestRate, $termMonths);
-
-            // Generate reference number
-            $referenceNo = "PMT-" . strtoupper(substr(uniqid(), -6));
-
-            // Calculate principal and interest amounts (using the amortization function)
-            $amortization = calculateAmortization($loanAmount, $interestRate, $termMonths, $nextPaymentDate);
-            $principalAmount = $amortization[0]['principal_amount']; // Get principal from first month
-            $interestAmount = $amortization[0]['interest_amount'];   // Get interest from first month
-
-            // Insert payment record
-            $stmt2 = $conn->prepare("INSERT INTO payment ( payment_date, payment_amount, reference_no,borrower_id, remarks, status ) VALUES ( ?, ?, ?, ?,?,'pending')");
-            $paymentType = "Auto-Generated";
-            $remarks = "pending";
-            $stmt2->bind_param("sssis", $nextPaymentDate, $monthlyPayment, $referenceNo, $borrowerId, $remarks);
-            $stmt2->execute();
-
-            // Check if loan schedule exists for the current month
-            $stmtCheck = $conn->prepare("SELECT id FROM loan_schedules WHERE loan_id = ? AND due_date = ?");
-            $stmtCheck->bind_param("is", $loanId, $nextPaymentDate);
-            $stmtCheck->execute();
-            $resultCheck = $stmtCheck->get_result();
-
-            if ($resultCheck->num_rows > 0) {
-                // Schedule exists, update it
-                $scheduleId = $resultCheck->fetch_assoc()['id'];
-                $stmt4 = $conn->prepare("UPDATE loan_schedules SET principal_amount = ?, interest_amount = ?, total_amount = ? WHERE id = ? AND status = 'pending'");
-                $stmt4->bind_param("dddi", $principalAmount, $interestAmount, $monthlyPayment, $scheduleId);
-                $stmt4->execute();
-            } else {
-                // Schedule doesn't exist, insert it
-                $stmt4 = $conn->prepare("INSERT INTO loan_schedules (loan_id, due_date, principal_amount, interest_amount, total_amount) VALUES (?, ?, ?, ?, ?)");
-                $stmt4->bind_param("isddd", $loanId, $nextPaymentDate, $principalAmount, $interestAmount, $monthlyPayment);
-                $stmt4->execute();
-            }
-
-            // Update loan balance (reduce by principal amount)
-            $newBalance = max(0, $loanAmount - $principalAmount);
-            $stmt3 = $conn->prepare("UPDATE loan SET loan_amount = ?, term_months = ? WHERE id = ?");
-            $newTermMonths = $termMonths - 1; // Reduce term_months by 1
-            $stmt3->bind_param("dii", $newBalance, $newTermMonths, $loanId);
-            $stmt3->execute();
-
-            // Update the loan schedule
-            $schedules = calculateAmortization($loanAmount, $interestRate, $termMonths, $nextPaymentDate);
-
-            foreach ($schedules as $schedule) {
-                // Check if loan schedule exists for the current month
-                $stmtCheck = $conn->prepare("SELECT id FROM loan_schedules WHERE loan_id = ? AND due_date = ?");
-                $stmtCheck->bind_param("is", $loanId, $schedule['due_date']);
-                $stmtCheck->execute();
-                $resultCheck = $stmtCheck->get_result();
-
-                if ($resultCheck->num_rows > 0) {
-                    // Schedule exists, update it
-                    $scheduleId = $resultCheck->fetch_assoc()['id'];
-                    $stmt4 = $conn->prepare("UPDATE loan_schedules SET principal_amount = ?, interest_amount = ?, total_amount = ? WHERE id = ?");
-                    $stmt4->bind_param("dddi", $schedule['principal_amount'], $schedule['interest_amount'], $schedule['total_amount'], $scheduleId);
-                    $stmt4->execute();
-                } else {
-                    // Schedule doesn't exist, insert it
-                    $stmt4 = $conn->prepare("INSERT INTO loan_schedules (loan_id, due_date, principal_amount, interest_amount, total_amount) VALUES (?, ?, ?, ?, ?)");
-                    $stmt4->bind_param("isddd", $loanId, $schedule['due_date'], $schedule['principal_amount'], $schedule['interest_amount'], $schedule['total_amount']);
-                    $stmt4->execute();
-                }
-            }
-
-            // Log the payment generation (optional)
-            error_log("Payment generated for loan ID: " . $loanId . ", Amount: " . $monthlyPayment);
+        if ($currentTermMonths <= 0) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Loan term has been completed'
+            ]);
+            exit;
         }
+
+        // Check if custom amount is provided
+        $customAmount = $_POST['custom_amount'] ?? null;
+
+        // Update the payment generation section:
+        if ($customAmount) {
+            try {
+                $paymentBreakdown = calculateCustomPayment(
+                    $currentBalance,
+                    $customAmount,
+                    $interestRate,
+                    $currentTermMonths
+                );
+
+                $principalAmount = $paymentBreakdown['principal_amount'];
+                $interestAmount = $paymentBreakdown['interest_amount'];
+                $totalAmount = $paymentBreakdown['total_amount'];
+                $newTermMonths = $currentTermMonths - $paymentBreakdown['term_reduction'];
+
+                // Ensure term doesn't go negative
+                $newTermMonths = max(0, $newTermMonths);
+
+            } catch (Exception $e) {
+                throw new Exception("Invalid custom payment: " . $e->getMessage());
+            }
+        } else {
+            // Regular monthly payment calculation
+            $monthlyPayment = calculateMonthlyPayment($currentBalance, $interestRate, $currentTermMonths);
+            $monthlyInterestRate = $interestRate / 100 / 12;
+            $interestAmount = $currentBalance * $monthlyInterestRate;
+            $principalAmount = $monthlyPayment - $interestAmount;
+            $totalAmount = $monthlyPayment;
+            $newTermMonths = $currentTermMonths - 1;
+        }
+
+        // Get the latest schedule date
+        $stmtLastSchedule = $conn->prepare("
+            SELECT due_date
+            FROM loan_schedules
+            WHERE loan_id = ?
+            ORDER BY due_date DESC
+            LIMIT 1
+        ");
+
+        $stmtLastSchedule->bind_param("i", $loanId);
+        $stmtLastSchedule->execute();
+        $lastScheduleResult = $stmtLastSchedule->get_result();
+
+        // Calculate next payment date
+        if ($lastScheduleResult->num_rows > 0) {
+            $lastSchedule = $lastScheduleResult->fetch_assoc();
+            $nextDate = date('Y-m-d', strtotime('+1 month', strtotime($lastSchedule['due_date'])));
+        } else {
+            $nextDate = date('Y-m-d', strtotime('+1 month', strtotime($loanDate)));
+        }
+
+        // Insert new schedule
+        $stmt2 = $conn->prepare("
+            INSERT INTO loan_schedules
+            (loan_id, due_date, principal_amount, interest_amount, total_amount, status)
+            VALUES (?, ?, ?, ?, ?, 'pending')
+        ");
+
+        $stmt2->bind_param(
+            "isddd",
+            $loanId,
+            $nextDate,
+            $principalAmount,
+            $interestAmount,
+            $totalAmount
+        );
+        $stmt2->execute();
+
+        // Generate payment reference
+        $paymentRefNo = "PMT-" . strtoupper(substr(uniqid(), -6));
+
+        // Insert payment record
+        $stmt3 = $conn->prepare("
+            INSERT INTO payment (
+                payment_date, principal_amount, interest_amount, payment_amount, reference_no, borrower_id,
+                remarks, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+        ");
+
+        $remarks = "Monthly payment for schedule #" . $stmt2->insert_id;
+        $stmt3->bind_param(
+            "sddssis",
+            $nextDate,
+            $principalAmount,
+            $interestAmount,
+            $totalAmount,
+            $paymentRefNo,
+            $borrowerId,
+            $remarks
+        );
+        $stmt3->execute();
+
+        $conn->commit();
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Schedule and payment generated successfully',
+            'data' => [
+                'schedule_id' => $stmt2->insert_id,
+                'payment_ref' => $paymentRefNo,
+                'due_date' => $nextDate,
+                'amount' => $totalAmount,
+                'remaining_months' => $newTermMonths,
+                'interest_amount' => $interestAmount,
+            ]
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'info',
+            'message' => 'No loans require schedule generation'
+        ]);
     }
-
-    $conn->commit();
-    echo "Payments generated successfully!";
 
 } catch (Exception $e) {
     $conn->rollback();
-    echo "Error: " . $e->getMessage();
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ]);
 } finally {
-    if (isset($stmt))
+    if (isset($stmt)) {
         $stmt->close();
-    if (isset($stmt2))
+    }
+    if (isset($stmt2)) {
         $stmt2->close();
-    if (isset($stmt3))
+    }
+    if (isset($stmt3)) {
         $stmt3->close();
-    if (isset($stmt4))
-        $stmt4->close();
-    if (isset($stmtCheck))
-        $stmtCheck->close();
-    if (isset($stmtCheckPayment))
-        $stmtCheckPayment->close();
+    }
     $conn->close();
 }
-
-function calculateAmortization($loanAmount, $interestRate, $termMonths, $paymentDate)
-{
-    $monthlyInterestRate = $interestRate / 100 / 12;
-    $monthlyPayment = $loanAmount * ($monthlyInterestRate / (1 - pow(1 + $monthlyInterestRate, -$termMonths)));
-
-    $balance = $loanAmount;
-    $schedules = [];
-
-    for ($i = 1; $i <= $termMonths; $i++) {
-        $interestAmount = $balance * $monthlyInterestRate;
-        $principalAmount = $monthlyPayment - $interestAmount;
-
-        $balance -= $principalAmount;
-
-        $dueDate = date('Y-m-d', strtotime("+$i months", strtotime($paymentDate)));
-
-        $schedules[] = [
-            'due_date' => $dueDate,
-            'principal_amount' => $principalAmount,
-            'interest_amount' => $interestAmount,
-            'total_amount' => $monthlyPayment,
-        ];
-    }
-
-    return $schedules;
-}
-?>

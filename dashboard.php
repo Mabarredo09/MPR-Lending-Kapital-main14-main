@@ -506,7 +506,7 @@ $db->close();
         <div class="table-button-container">
             <div class="table-button-group">
                 <button id="tblAllBtn" class="active">All</button>
-                <button id="tblDepositBtn">Pending Payment</button>
+                <button id="tblPendingPaymentBtn">Pending Payment</button>
                 <button id="tblPaymentBtn">Payment</button>
                 <button id="tblLoanBtn">Loan</button>
                 <button id="tblGroceryBtn">Grocery Item</button>
@@ -571,9 +571,8 @@ $db->close();
             <tbody>
                 <!-- Pending payment data will be dynamically populated here -->
             </tbody>
-
-            <!-- Payment Table -->
-            <table id="paymentTable" class="transaction-table" style="display: none;">
+            <!-- Pending Payment Table -->
+            <table id="pendingPaymentTable" class="transaction-table" style="display: none;">
                 <thead>
                     <tr>
                         <th>Due Date</th>
@@ -586,24 +585,40 @@ $db->close();
                     </tr>
                 </thead>
                 <tbody></tbody>
-            </table>
+                <!-- Payment Table -->
+                <table id="paymentTable" class="transaction-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Due Date</th>
+                            <th>Reference #</th>
+                            <th>Principal Amount</th>
+                            <th>Interest Amount</th>
+                            <th>Amount to Pay</th>
+                            <th>Amount Paid</th>
+                            <th>Remarks</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
 
-            <!-- Grocery Table -->
-            <table id="groceryTable" class="transaction-table" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>Purchase Date</th>
-                        <th>Reference #</th>
-                        <th>Item Amount</th>
-                        <th>Remarks</th>
-                        <th>Balance</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Grocery data will be dynamically populated here -->
-                </tbody>
-            </table>
+                <!-- Grocery Table -->
+                <table id="groceryTable" class="transaction-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Purchase Date</th>
+                            <th>Reference #</th>
+                            <th>Item Amount</th>
+                            <th>Remarks</th>
+                            <th>Balance</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Grocery data will be dynamically populated here -->
+                    </tbody>
+                </table>
     </div>
 </body>
 <!-- JavaScript -->

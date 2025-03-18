@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->begin_transaction();
 
         // Get file paths before deletion
-        $filesSql = "SELECT 
+        $filesSql = "SELECT
             id.id_photo_path,
             ins.insurance_file_path,
             GROUP_CONCAT(cf.file_path) as collateral_files
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $files = $filesResult->fetch_assoc();
 
         // Get address IDs before deleting borrower
-        $addressSql = "SELECT b.address_id, ed.address_id as employer_address_id 
+        $addressSql = "SELECT b.address_id, ed.address_id as employer_address_id
                       FROM borrowers b
                       LEFT JOIN employment_details ed ON b.id = ed.borrower_id
                       WHERE b.id = ?";
@@ -151,4 +151,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode($response);
     exit();
 }
-?>
