@@ -102,32 +102,54 @@ try {
     $totalAmount = $paymentBreakdown['total_amount'];
     $newTermMonths = $loanDetails['month_term_duration'] - $paymentBreakdown['term_reduction'];
 
+    // Ensure term doesn't go negative unless balance is zero
+    if ($loanDetails['month_term_duration'] == 1 && $paymentBreakdown['remaining_balance'] > 0) {
+        $newTermMonths = 1;
+    } else {
+        $newTermMonths = max(0, $newTermMonths);
+    }
+
     // Update payment status
     $stmt = $conn->prepare("UPDATE payment SET status = 'paid', paid_amount = ?, principal_amount = ?, interest_amount = ? WHERE reference_no = ?");
     $stmt->bind_param("ddds", $totalAmount, $principalAmount, $interestAmount, $reference_no);
     $stmt->execute();
 
-    // Update loan balance with specific loan reference
     $stmt2 = $conn->prepare("
-        UPDATE loan_balance lb
-        JOIN payment p ON lb.borrower_id = p.borrower_id
-        JOIN loan l ON lb.loan_reference_no = l.reference_no
-        SET
-            lb.loan_balance = CASE
-                WHEN lb.loan_balance - ? <= 0 THEN 0
-                ELSE lb.loan_balance - ?
-            END,
-            lb.status = CASE
-                WHEN lb.loan_balance - ? <= 0 THEN '0'
-                ELSE '1'
-            END,
-            lb.month_term_duration = ?
-        WHERE p.reference_no = ?
-        AND l.reference_no = ?
-        AND lb.status = '1'
-    ");
-    $stmt2->bind_param("ddddss", $principalAmount, $principalAmount, $principalAmount, $newTermMonths, $reference_no, $loanDetails['reference_no']);
+    UPDATE loan_balance lb
+    JOIN payment p ON lb.borrower_id = p.borrower_id
+    JOIN loan l ON lb.loan_reference_no = l.reference_no
+    SET
+        lb.loan_balance = CASE
+            WHEN lb.loan_balance - ? <= 0 THEN 0
+            ELSE lb.loan_balance - ?
+        END
+    WHERE p.reference_no = ?
+    AND l.reference_no = ?
+    AND lb.status = '1'
+");
+    $stmt2->bind_param("ddss", $principalAmount, $principalAmount, $reference_no, $loanDetails['reference_no']);
     $stmt2->execute();
+
+    // Then, update the status and month_term_duration based on the updated loan balance
+    $stmt4 = $conn->prepare("
+    UPDATE loan_balance lb
+    JOIN payment p ON lb.borrower_id = p.borrower_id
+    JOIN loan l ON lb.loan_reference_no = l.reference_no
+    SET
+        lb.status = CASE
+            WHEN lb.loan_balance <= 0 THEN 0
+            ELSE 1
+        END,
+        lb.month_term_duration = CASE
+            WHEN lb.loan_balance <= 0 THEN 0
+            ELSE ?
+        END
+    WHERE p.reference_no = ?
+    AND l.reference_no = ?
+    AND lb.status = '1'
+");
+    $stmt4->bind_param("dss", $newTermMonths, $reference_no, $loanDetails['reference_no']);
+    $stmt4->execute();
 
     // Update loan schedule status
     $stmt3 = $conn->prepare("
